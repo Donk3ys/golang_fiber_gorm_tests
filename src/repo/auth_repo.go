@@ -53,6 +53,13 @@ func (i *Instance) CheckPasswordResetCode(email string, code string) error {
 }
 
 func (i *Instance) UpdateUserSession(existingToken string, userID uuid.UUID) (string, error) {
+	// Check user active
+	var userModel models.User
+	i.Db.First(&userModel, "id=? AND status=?", userID, 1)
+	if userModel.ID == uuid.Nil {
+		return "", errors.New("User not found or disabled. Please conteact support!")
+	}
+
 	claims := views.SessionClaims{
 		UserID: userID,
 		// UserRole: userRole,

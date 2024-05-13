@@ -31,13 +31,7 @@ func main() {
 
 	db := storage.ConnectPostgres()
 	storage.AutoMigratePostgres(db)
-
 	storage.Seed(db)
-
-	app := fiber.New(fiber.Config{
-		Immutable: true,
-	})
-	app.Use(cors.New())
 
 	repo := repos.Instance{
 		Db: db,
@@ -68,6 +62,11 @@ func main() {
 		Notification: nofification,
 		Repo:         repo,
 	}
+
+	app := fiber.New(fiber.Config{
+		Immutable: true,
+	})
+	app.Use(cors.New())
 	appHandlers.Setup(app)
 
 	c := cron.New()

@@ -50,11 +50,6 @@ func setupTestApp() {
 
 	// database.Seed(db)
 
-	app = fiber.New(fiber.Config{
-		Immutable: true,
-	})
-	// app.Use(cors.New())
-
 	mockEmail = &mocks_test.EmailCLient{}
 	mockSms = &mocks_test.SmsCLient{}
 	mockFs = &mocks_test.FileSysetmClient{}
@@ -80,6 +75,11 @@ func setupTestApp() {
 		Notification: notification,
 		Repo:         repo,
 	}
+
+	app = fiber.New(fiber.Config{
+		Immutable: true,
+	})
+	// app.Use(cors.New())
 	appHandlers.Setup(app)
 }
 
