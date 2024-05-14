@@ -1,9 +1,13 @@
 package util
 
 import (
+	"fmt"
+	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/jaswdr/faker"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestFormatPhoneNumberLocal(t *testing.T) {
@@ -122,4 +126,29 @@ func TestCheckPasswordMatch(t *testing.T) {
 
 		n++
 	}
+}
+
+func TestParseDuration(t *testing.T) {
+	n := 0
+	for n < 1000 {
+		days := rand.Intn(364)
+		input := fmt.Sprintf("%dd", days)
+		dur, err := ParseDuration(input)
+		if err != nil {
+			t.Fatalf("Should parse duration from %v\n%v", input, err)
+		}
+
+		assert.Equal(t, time.Hour*24*time.Duration(days), dur)
+
+		n++
+	}
+
+	dur, err := ParseDuration("12m")
+	assert.Equal(t, time.Minute*12, dur)
+
+	_, err = ParseDuration("")
+	assert.Error(t, err)
+
+	_, err = ParseDuration("12w")
+	assert.Error(t, err)
 }

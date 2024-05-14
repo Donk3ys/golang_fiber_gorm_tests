@@ -1,6 +1,7 @@
 package main
 
 import (
+	"api/src/constants"
 	"api/src/handlers"
 	"api/src/middleware"
 	"api/src/notification"
@@ -9,9 +10,7 @@ import (
 	"os"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/log"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/joho/godotenv"
 	"github.com/robfig/cron"
 )
 
@@ -22,12 +21,7 @@ func main() {
 	} else if os.Getenv("BUILD") == "stage" {
 		envPath = ".env-stage"
 	}
-
-	if err := godotenv.Load(envPath); err != nil {
-		log.Error(err)
-		panic("Environment variables not set or error parsing!")
-	}
-	log.Infof("Loaded %s", envPath)
+	constants.SetConstantsFromEnvs(envPath)
 
 	db := storage.ConnectPostgres()
 	storage.AutoMigratePostgres(db)

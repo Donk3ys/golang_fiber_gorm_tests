@@ -1,11 +1,9 @@
 package handlers
 
 import (
-	"api/src/constants"
 	"api/src/middleware"
 	"api/src/notification"
 	"api/src/repo"
-	"os"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -20,8 +18,6 @@ type Instance struct {
 }
 
 func (i *Instance) Setup(app *fiber.App) {
-	constants.API_URL = os.Getenv("API_URL")
-	constants.WEBSITE_URL = os.Getenv("WEBSITE_URL")
 	// go wsWorker() // run websockt worker
 
 	app.Static("/public", "./public")

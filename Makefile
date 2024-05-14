@@ -6,6 +6,7 @@ test-unit:
 test-intergration: 
 	go test ./src/repo -coverprofile=.build/test-coverage/repo-cover.out
 	go test ./src/handlers -coverprofile=.build/test-coverage/handler-cover.out
+	go test ./src/middleware -coverprofile=.build/test-coverage/middleware-cover.out
 
 test: test-unit test-intergration
 
@@ -17,6 +18,9 @@ cover-repo:
 
 cover-handler:
 	go tool cover -html=.build/test-coverage/handler-cover.out
+
+cover-middleware:
+	go tool cover -html=.build/test-coverage/middleware-cover.out
 
 deploy-prod: test
 	sh deploy_prod.sh 

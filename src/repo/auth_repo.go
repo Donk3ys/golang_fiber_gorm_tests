@@ -11,6 +11,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/gofiber/fiber/v2/log"
 	"github.com/golang-jwt/jwt"
 	uuid "github.com/satori/go.uuid"
 )
@@ -82,7 +83,10 @@ func (i *Instance) UpdateUserSession(existingToken string, userID uuid.UUID) (st
 		ExpiresAt: time.Now().Add(constants.AUTH_SESSION_DURATION),
 	}
 	if existingToken != "" {
-		i.Db.Where("token=? AND user_id=?", existingToken, userID).Delete(models.Session{})
+		res := i.Db.Where("token=? AND user_id=?", existingToken, userID).Delete(models.Session{})
+		if res.RowsAffected == 0 {
+			log.Warnf("Could not delete Session row token=%s AND user_id=%v", existingToken, userID)
+		}
 	}
 	i.Db.Create(&session)
 

@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"reflect"
 	"strings"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -70,4 +71,18 @@ func GenPasswordHash(password string) (string, error) {
 
 func CheckPasswordMatch(hashedPassword string, password string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+}
+
+func ParseDuration(s string) (time.Duration, error) {
+	if s == "" {
+		return 0, errors.New("Cannot parse empty string")
+	}
+	postfix := s[len(s)-1:]
+
+	if postfix == "d" {
+		days, err := time.ParseDuration(s[:len(s)-1] + "h")
+		return days * 24, err
+	}
+
+	return time.ParseDuration(s)
 }

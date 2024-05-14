@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/log"
 	"github.com/golang-jwt/jwt"
 	uuid "github.com/satori/go.uuid"
 )
@@ -56,9 +57,11 @@ func (i *Instance) AuthenticateAuthTokenAndCreateNewIfExpired(c *fiber.Ctx) erro
 		defer func() {
 			reqTimerEnd := time.Now()
 			reqTimerDur := reqTimerEnd.Sub(reqTimerStart)
+			log.Debugf("ctx dur %v", reqTimerDur)
 			if reqTimerDur > constants.AUTH_TOKEN_DURATION {
-				newBearer, _ := i.Repo.UpdateUserSession(bearer, exSession.UserID)
-				c.Set(constants.AUTH_HEADER, "bearer "+newBearer)
+				extendedBearer, _ := i.Repo.UpdateUserSession(newBearer, exSession.UserID)
+				c.Set(constants.AUTH_HEADER, "bearer "+extendedBearer)
+				c.Set("duration", reqTimerDur.String())
 			}
 		}()
 		return c.Next()
@@ -69,6 +72,7 @@ func (i *Instance) AuthenticateAuthTokenAndCreateNewIfExpired(c *fiber.Ctx) erro
 }
 
 func ParseBearerToken(bearer string) string {
+	bearer = strings.TrimSpace(bearer)
 	return strings.Replace(bearer, constants.AUTH_HEADER+" ", "", 1)
 }
 

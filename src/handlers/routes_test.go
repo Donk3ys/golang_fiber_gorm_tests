@@ -1,6 +1,7 @@
 package handlers_test
 
 import (
+	"api/src/constants"
 	"api/src/handlers"
 	"api/src/middleware"
 	"api/src/mocks"
@@ -9,13 +10,11 @@ import (
 	"api/src/storage"
 	"context"
 	"encoding/json"
-	"log"
 	"os"
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jaswdr/faker"
-	"github.com/joho/godotenv"
 	"github.com/testcontainers/testcontainers-go"
 	"gorm.io/gorm"
 )
@@ -31,9 +30,7 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	if err := godotenv.Load("../../.env-test"); err != nil {
-		log.Panic("Test environment variables not set or error parsing!")
-	}
+	constants.SetConstantsFromEnvs("../../.env-test")
 
 	fake = faker.New()
 	setupTestApp()
