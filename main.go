@@ -25,11 +25,14 @@ func main() {
 
 	db := storage.ConnectPostgres()
 	storage.AutoMigratePostgres(db)
-	storage.Seed(db)
+	// storage.Seed(db)
+
+	cache := storage.ConnectRistrettoCache()
 
 	repo := repos.Instance{
-		Db: db,
-		Fs: storage.FileSystem{
+		Cache: cache,
+		Db:    db,
+		Fs: &storage.FileSystem{
 			Client: storage.NewLocalStorage(),
 		},
 	}

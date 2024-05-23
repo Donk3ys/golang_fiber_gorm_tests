@@ -9,12 +9,14 @@ import (
 	"os"
 	"testing"
 
+	"github.com/eko/gocache/lib/v4/marshaler"
 	"github.com/jaswdr/faker"
 	"github.com/testcontainers/testcontainers-go"
 	"gorm.io/gorm"
 )
 
 var (
+	cache  *marshaler.Marshaler
 	db     *gorm.DB
 	dbTc   testcontainers.Container
 	fake   faker.Faker
@@ -37,16 +39,20 @@ func setupTestApp() {
 	db, dbTc = storage.TestConnectPostgres(context.Background())
 	storage.AutoMigratePostgres(db)
 
+	cache = storage.ConnectRistrettoCache()
+
 	mockFs = &mocks_test.FileSysetmClient{}
 
 	// database.Seed(db)
 	repo = repos.Instance{
-		Db: db,
-		Fs: storage.FileSystem{Client: mockFs},
+		Cache: cache,
+		Db:    db,
+		Fs:    &storage.FileSystem{Client: mockFs},
 	}
 }
 
 func tearDownTestApp() {
+	cache.Clear(context.Background())
 	dbTc.Terminate(context.Background())
 }
 

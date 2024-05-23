@@ -39,10 +39,12 @@ func TestMain(m *testing.M) {
 func setupTestApp() {
 	db, dbTc = storage.TestConnectPostgres(context.Background())
 	storage.AutoMigratePostgres(db)
+	cache := storage.ConnectRistrettoCache()
 
 	repo := repos.Instance{
-		Db: db,
-		Fs: storage.FileSystem{Client: &mocks_test.FileSysetmClient{}},
+		Cache: cache,
+		Db:    db,
+		Fs:    &storage.FileSystem{Client: &mocks_test.FileSysetmClient{}},
 	}
 
 	mware = middleware.Instance{

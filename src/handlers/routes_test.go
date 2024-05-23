@@ -9,7 +9,6 @@ import (
 	"api/src/repo"
 	"api/src/storage"
 	"context"
-	"encoding/json"
 	"os"
 	"testing"
 
@@ -47,13 +46,16 @@ func setupTestApp() {
 
 	// database.Seed(db)
 
+	cache := storage.ConnectRistrettoCache()
+
 	mockEmail = &mocks_test.EmailCLient{}
 	mockSms = &mocks_test.SmsCLient{}
 	mockFs = &mocks_test.FileSysetmClient{}
 
 	repo := repos.Instance{
-		Db: db,
-		Fs: storage.FileSystem{
+		Cache: cache,
+		Db:    db,
+		Fs: &storage.FileSystem{
 			Client: mockFs,
 		},
 	}
@@ -90,10 +92,4 @@ func setupTest() {
 
 func tearDownTest() {
 	storage.TestDropTablesPostgres(db)
-}
-
-func responseMap(b []byte) map[string]interface{} {
-	var m map[string]interface{}
-	json.Unmarshal(b, &m)
-	return m
 }
