@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/gofiber/fiber/v2/log"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -27,7 +28,7 @@ func ConnectPostgres() *gorm.DB {
 		Logger: logger.Default.LogMode(logger.Info),
 	})
 	if err != nil {
-		panic("Postgres connection error")
+		log.Fatal("Postgres connection error", err)
 	}
 
 	return db

@@ -50,7 +50,7 @@ func newLoggedInTestUser() (models.User, string) {
 	req.Header.Set("Content-type", "application/json")
 
 	resp, _ := app.Test(req, -1)
-	bearer := resp.Header.Get(constants.AUTH_HEADER)
+	bearer := resp.Header.Get(constants.ACCESS_TOKEN_HEADER)
 
 	return user, bearer
 }
@@ -76,7 +76,7 @@ func TestSignupUserSuccess(t *testing.T) {
 	newUser, resp := signupTestUser()
 
 	body, _ := ioutil.ReadAll(resp.Body)
-	json := responseMap(body)
+	json := util.JsonMapFromBytes(body)
 	t.Log(json)
 
 	if assert.Equal(t, http.StatusCreated, resp.StatusCode) {
@@ -119,7 +119,7 @@ func TestVerifyUserSuccess(t *testing.T) {
 
 	resp, _ := app.Test(req, -1)
 	body, _ := ioutil.ReadAll(resp.Body)
-	json := responseMap(body)
+	json := util.JsonMapFromBytes(body)
 	t.Log(json)
 
 	if assert.Equal(t, http.StatusOK, resp.StatusCode) {
@@ -145,8 +145,8 @@ func TestLoginSuccess(t *testing.T) {
 
 	resp, _ := app.Test(req, -1)
 	body, _ := ioutil.ReadAll(resp.Body)
-	json := responseMap(body)
-	bearer := resp.Header.Get(constants.AUTH_HEADER)
+	json := util.JsonMapFromBytes(body)
+	bearer := resp.Header.Get(constants.ACCESS_TOKEN_HEADER)
 
 	if resp.StatusCode != 200 {
 		t.Log(json["error"])
@@ -168,11 +168,11 @@ func TestGetUserSuccess(t *testing.T) {
 	user, bearer := newLoggedInTestUser()
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/user", nil)
-	req.Header.Set(constants.AUTH_HEADER, bearer)
+	req.Header.Set(constants.ACCESS_TOKEN_HEADER, bearer)
 
 	resp, _ := app.Test(req, -1)
 	body, _ := ioutil.ReadAll(resp.Body)
-	json := responseMap(body)
+	json := util.JsonMapFromBytes(body)
 
 	if assert.Equal(t, http.StatusOK, resp.StatusCode) {
 		assert.Equal(t, user.ID.String(), json["id"])
@@ -192,7 +192,7 @@ func TestGetPasswordResetCodeSuccess(t *testing.T) {
 	// ACT
 	code, resp := createUserPasswordResetRequest(&user)
 	body, _ := ioutil.ReadAll(resp.Body)
-	json := responseMap(body)
+	json := util.JsonMapFromBytes(body)
 
 	// ASSERT
 	// Assert repsonse
@@ -220,7 +220,7 @@ func TestVerifyPasswordResetCodeSuccess(t *testing.T) {
 
 	resp, _ := app.Test(req, -1)
 	body, _ := ioutil.ReadAll(resp.Body)
-	json := responseMap(body)
+	json := util.JsonMapFromBytes(body)
 
 	// ASSERT
 	// Assert repsonse
@@ -247,7 +247,7 @@ func TestResetPasswordSuccess(t *testing.T) {
 
 	resp, _ := app.Test(req, -1)
 	body, _ := ioutil.ReadAll(resp.Body)
-	json := responseMap(body)
+	json := util.JsonMapFromBytes(body)
 
 	// ASSERT
 	// Assert repsonse
@@ -284,7 +284,7 @@ func TestSignupUserFailInvaildData(t *testing.T) {
 
 	resp, _ := app.Test(req, -1)
 	body, _ := ioutil.ReadAll(resp.Body)
-	json := responseMap(body)
+	json := util.JsonMapFromBytes(body)
 
 	if assert.Equal(t, http.StatusBadRequest, resp.StatusCode) {
 		assert.Equal(t, "Invalid data!", json[handlers.ERROR])
@@ -302,7 +302,7 @@ func TestSignupUserFailEmailOrPasswordNotSet(t *testing.T) {
 
 	resp, _ := app.Test(req, -1)
 	body, _ := ioutil.ReadAll(resp.Body)
-	json := responseMap(body)
+	json := util.JsonMapFromBytes(body)
 
 	if assert.Equal(t, http.StatusBadRequest, resp.StatusCode) {
 		assert.Equal(t, "Email or password not set", json[handlers.ERROR])
@@ -315,7 +315,7 @@ func TestSignupUserFailEmailOrPasswordNotSet(t *testing.T) {
 
 	resp, _ = app.Test(req, -1)
 	body, _ = ioutil.ReadAll(resp.Body)
-	json = responseMap(body)
+	json = util.JsonMapFromBytes(body)
 
 	if assert.Equal(t, http.StatusBadRequest, resp.StatusCode) {
 		assert.Equal(t, "Email or password not set", json[handlers.ERROR])
@@ -334,7 +334,7 @@ func TestSignupUserFailEmailAlreadyRegistered(t *testing.T) {
 
 	resp, _ := app.Test(req, -1)
 	body, _ := ioutil.ReadAll(resp.Body)
-	json := responseMap(body)
+	json := util.JsonMapFromBytes(body)
 
 	if assert.Equal(t, http.StatusConflict, resp.StatusCode) {
 		assert.Equal(t, "Email address has already been registered", json[handlers.ERROR])
@@ -354,7 +354,7 @@ func TestSignupUserFailAccountRemoved(t *testing.T) {
 
 	resp, _ := app.Test(req, -1)
 	body, _ := ioutil.ReadAll(resp.Body)
-	json := responseMap(body)
+	json := util.JsonMapFromBytes(body)
 
 	if assert.Equal(t, http.StatusConflict, resp.StatusCode) {
 		assert.Equal(t, "Previous account has been removed. Please contact our support team to assist.", json[handlers.ERROR])
@@ -373,11 +373,11 @@ func TestGetUserFailNotFound(t *testing.T) {
 
 	// Action
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/user", nil)
-	req.Header.Set(constants.AUTH_HEADER, bearer)
+	req.Header.Set(constants.ACCESS_TOKEN_HEADER, bearer)
 
 	resp, _ := app.Test(req, -1)
 	body, _ := ioutil.ReadAll(resp.Body)
-	json := responseMap(body)
+	json := util.JsonMapFromBytes(body)
 
 	// Assert
 	if assert.Equal(t, http.StatusNotFound, resp.StatusCode) {
@@ -396,7 +396,7 @@ func TestGetPasswordCodeFailNoEmailSet(t *testing.T) {
 
 	resp, _ := app.Test(req, -1)
 	body, _ := ioutil.ReadAll(resp.Body)
-	json := responseMap(body)
+	json := util.JsonMapFromBytes(body)
 
 	// Assert
 	if assert.Equal(t, http.StatusBadRequest, resp.StatusCode) {
@@ -417,7 +417,7 @@ func TestGetPasswordCodeFailNoActiveUser(t *testing.T) {
 
 	resp, _ := app.Test(req, -1)
 	body, _ := ioutil.ReadAll(resp.Body)
-	json := responseMap(body)
+	json := util.JsonMapFromBytes(body)
 
 	// Assert
 	if assert.Equal(t, http.StatusBadRequest, resp.StatusCode) {
@@ -441,7 +441,7 @@ func TestGetPasswordCodeFailSendMail(t *testing.T) {
 
 	resp, _ := app.Test(req, -1)
 	body, _ := ioutil.ReadAll(resp.Body)
-	json := responseMap(body)
+	json := util.JsonMapFromBytes(body)
 
 	// Assert
 	if assert.Equal(t, http.StatusInternalServerError, resp.StatusCode) {
@@ -461,7 +461,7 @@ func TestVerifyPasswordResetCodeFailNoEmailOrCode(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/password/reset/verify?email=mail@email.com=&code=", nil)
 	resp, _ := app.Test(req, -1)
 	body, _ := ioutil.ReadAll(resp.Body)
-	json := responseMap(body)
+	json := util.JsonMapFromBytes(body)
 
 	// Assert
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
@@ -471,7 +471,7 @@ func TestVerifyPasswordResetCodeFailNoEmailOrCode(t *testing.T) {
 	req = httptest.NewRequest(http.MethodGet, "/api/v1/password/reset/verify?email=&code=00000", nil)
 	resp, _ = app.Test(req, -1)
 	body, _ = ioutil.ReadAll(resp.Body)
-	json = responseMap(body)
+	json = util.JsonMapFromBytes(body)
 
 	// Assert
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
@@ -487,7 +487,7 @@ func TestVerifyPasswordResetCodeFailNoCodeFoundOrExpired(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/password/reset/verify?email=mail@email.com=&code=00000000", nil)
 	resp, _ := app.Test(req, -1)
 	body, _ := ioutil.ReadAll(resp.Body)
-	json := responseMap(body)
+	json := util.JsonMapFromBytes(body)
 
 	// Assert
 	if assert.Equal(t, http.StatusNotFound, resp.StatusCode) {
@@ -505,7 +505,7 @@ func TestResetPasswordFailNoBadData(t *testing.T) {
 
 	resp, _ := app.Test(req, -1)
 	body, _ := ioutil.ReadAll(resp.Body)
-	json := responseMap(body)
+	json := util.JsonMapFromBytes(body)
 
 	// Assert
 	if assert.Equal(t, http.StatusBadRequest, resp.StatusCode) {
@@ -525,7 +525,7 @@ func TestResetPasswordFailPasswordNotLongEnough(t *testing.T) {
 
 	resp, _ := app.Test(req, -1)
 	body, _ := ioutil.ReadAll(resp.Body)
-	json := responseMap(body)
+	json := util.JsonMapFromBytes(body)
 
 	// Assert
 	if assert.Equal(t, http.StatusBadRequest, resp.StatusCode) {
@@ -545,7 +545,7 @@ func TestResetPasswordFailUserNotFound(t *testing.T) {
 
 	resp, _ := app.Test(req, -1)
 	body, _ := ioutil.ReadAll(resp.Body)
-	json := responseMap(body)
+	json := util.JsonMapFromBytes(body)
 
 	// Assert
 	if assert.Equal(t, http.StatusNotFound, resp.StatusCode) {

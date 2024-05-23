@@ -6,12 +6,12 @@ import (
 	"api/src/models"
 	"api/src/util"
 	"api/src/views"
+
+	"api/src/token"
 	"errors"
 	"fmt"
-	"os"
 	"time"
 
-	"github.com/gofiber/fiber/v2/log"
 	"github.com/golang-jwt/jwt"
 	uuid "github.com/satori/go.uuid"
 )
@@ -53,42 +53,116 @@ func (i *Instance) CheckPasswordResetCode(email string, code string) error {
 	return nil
 }
 
-func (i *Instance) UpdateUserSession(existingToken string, userID uuid.UUID) (string, error) {
+func (i *Instance) CreateUserSession(userID uuid.UUID) (string, int64, string, error) {
+	// Create new bearerToken
+	bearer, bearerExpiry, err := token.CreateAuthToken(userID)
+	if err != nil {
+		return "", 0, "", err
+	}
+
+	// Check for existing session in db/cache
+	var exSession models.Session
+	i.Db.First(&exSession).Where("user_id", userID)
+	if exSession.ID != uuid.Nil {
+		exRefreshToken, err := token.DecodeRefreshToken(exSession.Token)
+		// Check refresh isnt about to expire
+		dur := exSession.ExpiresAt.Sub(time.Now().UTC())
+		validDur := dur > constants.ACCESS_TOKEN_DURATION
+
+		// If refresh token still valid return exisitng one
+		if err == nil && exRefreshToken.Valid && validDur {
+			return bearer, bearerExpiry.Unix(), exSession.Token, nil
+		}
+	}
+
+	// Create new session
+	// Create new refreshToken
+	refreshToken, refreshExpiry, err := token.CreateRefreshToken(userID)
+	if err != nil {
+		return "", 0, "", err
+	}
+
+	// Save new session to db/cache
+	session := models.Session{
+		Token:     refreshToken,
+		FromToken: exSession.Token,
+		UserID:    userID,
+		CreatedAt: time.Now(),
+		ExpiresAt: refreshExpiry.UTC(),
+	}
+	if exSession.ID != uuid.Nil {
+		session.ID = exSession.ID
+	}
+	res := i.Db.Save(&session)
+	if res.RowsAffected == 0 {
+		return "", 0, "", errors.New("Could not create auth token!")
+	}
+
+	return bearer, bearerExpiry.Unix(), refreshToken, nil
+}
+
+func (i *Instance) UpdateUserSession(existingBearerToken string, existingRefreshToken string) (string, int64, string, error) {
+	exBearerToken, _ := token.DecodeAuthToken(existingBearerToken)
+	exRefreshToken, errRT := token.DecodeRefreshToken(existingRefreshToken)
+	userID := exBearerToken.Claims.(*views.SessionClaims).UserID
+	userIDRT := exRefreshToken.Claims.(*views.SessionClaims).UserID
+	if userID != userIDRT {
+		return "", 0, "", errors.New("User missmatch from tokens")
+	}
+
 	// Check user active
 	var userModel models.User
 	i.Db.First(&userModel, "id=? AND status=?", userID, 1)
 	if userModel.ID == uuid.Nil {
-		return "", errors.New("User not found or disabled. Please conteact support!")
+		return "", 0, "", errors.New("User not found or disabled. Please conteact support!")
 	}
 
-	claims := views.SessionClaims{
-		UserID: userID,
-		// UserRole: userRole,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(constants.AUTH_TOKEN_DURATION).Unix(),
-		},
+	// Check for existing session in db/cache
+	var exSession models.Session
+	i.Db.First(&exSession, "(token=? AND expires_at>?) OR from_token=?", existingRefreshToken, time.Now(), existingRefreshToken)
+	if exSession.ID == uuid.Nil {
+		return "", 0, "", errors.New("Could not find exising session!")
 	}
 
-	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(os.Getenv(constants.AUTH_SECRET)))
+	// Create new bearerToken
+	bearer, bearerExpiry, err := token.CreateAuthToken(userID)
 	if err != nil {
-		return token, err
+		return "", 0, "", err
+	}
+
+	// Check refresh isnt about to expire
+	dur := exSession.ExpiresAt.Sub(time.Now().UTC())
+	validDur := dur > constants.ACCESS_TOKEN_DURATION
+	if errRT == nil && exRefreshToken.Valid && validDur {
+		// refreshToken vaild send new bearer
+		return bearer, bearerExpiry.Unix(), "", nil
+	}
+
+	// Check if refresh only expired
+	ve, ok := errRT.(*jwt.ValidationError)
+	if !ok || ve.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) == 0 {
+		return "", 0, "", errors.New("Token invaild [001]")
+	}
+
+	// Create new refreshToken
+	refreshToken, refreshExpiry, err := token.CreateRefreshToken(userID)
+	if err != nil {
+		return "", 0, "", err
 	}
 
 	// Create session
 	session := models.Session{
-		Token:     token,
-		FromToken: existingToken,
+		ID:        exSession.ID,
+		Token:     refreshToken,
+		FromToken: existingRefreshToken,
 		UserID:    userID,
 		CreatedAt: time.Now(),
-		ExpiresAt: time.Now().Add(constants.AUTH_SESSION_DURATION),
+		ExpiresAt: refreshExpiry.UTC(),
 	}
-	if existingToken != "" {
-		res := i.Db.Where("token=? AND user_id=?", existingToken, userID).Delete(models.Session{})
-		if res.RowsAffected == 0 {
-			log.Warnf("Could not delete Session row token=%s AND user_id=%v", existingToken, userID)
-		}
+	res := i.Db.Save(&session)
+	if res.RowsAffected == 0 {
+		return "", 0, "", errors.New("Could not save refresh token")
 	}
-	i.Db.Create(&session)
 
-	return token, err
+	return bearer, bearerExpiry.Unix(), refreshToken, nil
 }

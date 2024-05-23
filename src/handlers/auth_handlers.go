@@ -3,7 +3,6 @@ package handlers
 import (
 	"api/src/constants"
 	otp "api/src/enums/otps"
-	"api/src/middleware"
 	"api/src/models"
 	"api/src/util"
 	"api/src/views"
@@ -129,14 +128,17 @@ func (i *Instance) loginUser(c *fiber.Ctx) error {
 	// }
 	// return jsonMessage(c, "Mobile OTP sent.")
 
-	token, err := i.Repo.UpdateUserSession("", userModel.ID)
+	bearerToken, bearerExpiry, refreshToken, err := i.Repo.CreateUserSession(userModel.ID)
 	if err != nil {
+		log.Error("CreateUserSession: ", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{ERROR: "Invalid login credentials! (token)"})
 		// return jsonError(c, fiber.StatusBadRequest, "Invalid login credentials!")
 	}
 
 	c.Set("Access-Control-Expose-Headers", "*") // Needed to show headers in web app
-	c.Set(constants.AUTH_HEADER, "bearer "+token)
+	c.Set(constants.ACCESS_TOKEN_HEADER, "bearer "+bearerToken)
+	c.Set(constants.ACCESS_TOKEN_EXPIRY_HEADER, fmt.Sprint(bearerExpiry))
+	c.Set(constants.REFRESH_TOKEN_HEADER, refreshToken)
 	return c.JSON(views.UserModelToUserView(&userModel))
 }
 
@@ -170,16 +172,6 @@ func (i *Instance) loginUser(c *fiber.Ctx) error {
 // 	c.Set(constants.AUTH_HEADER, "bearer "+token)
 // 	return c.JSON(&user)
 // }
-
-func (i *Instance) logoutUser(c *fiber.Ctx) error {
-	bearer := middleware.ParseBearerToken(c.Get(constants.AUTH_HEADER))
-	res := i.Repo.Db.Where("token=?", bearer).Delete(&models.Session{})
-	if res.Error != nil {
-		println(res.Error)
-	}
-
-	return c.JSON(fiber.Map{MESSAGE: "User succesfully logged out."})
-}
 
 func (i *Instance) signupVerifyEmail(c *fiber.Ctx) error {
 	strCode := c.Query("code")
@@ -380,29 +372,26 @@ func (i *Instance) updateUser(c *fiber.Ctx) error {
 // 	return c.JSON(fiber.Map{MESSAGE: "User succesfully removed."})
 // }
 
-// func (i *Instance) refreshSession(c *fiber.Ctx) error {
-// 	bearer := middleware.ParseBearerToken(c.Get(constants.AUTH_HEADER))
-// 	if bearer == "" {
-// 		return jsonError(c, fiber.StatusBadRequest, "Invalid data!")
-// 	}
-//
-// 	// Check session not expired
-// 	var exSession models.Session
-// 	i.Repo.Db.First(&exSession, "token=? AND expires_at>?", bearer, time.Now().UTC())
-// 	if exSession.Token == "" {
-// 		return jsonError(c, fiber.StatusUnauthorized, "Session expired")
-// 	}
-//
-// 	// Create newSession
-// 	newToken, err := i.Repo.UpdateUserSession(bearer, exSession.UserID, exSession.UserRole)
-// 	if err != nil {
-// 		return jsonError(c, fiber.StatusUnauthorized, "Error creating new session!")
-// 	}
-//
-// 	c.Set("Access-Control-Expose-Headers", "*") // Needed to show headers in web app
-// 	c.Set(constants.AUTH_HEADER, "bearer "+newToken)
-// 	return c.JSON(fiber.Map{constants.AUTH_HEADER: "bearer " + newToken})
-// }
+func (i *Instance) refreshSession(c *fiber.Ctx) error {
+	existingBearerToken := c.Get(constants.ACCESS_TOKEN_HEADER)
+	existingRefreshToken := c.Get(constants.REFRESH_TOKEN_HEADER)
+	if existingBearerToken == "" || existingRefreshToken == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{ERROR: "Bad Request - No token missing"})
+	}
+
+	bearerToken, bearerExpiry, refreshToken, err := i.Repo.UpdateUserSession(existingBearerToken, existingRefreshToken)
+	if err != nil {
+		log.Error("UpdateUserSession: ", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{ERROR: "Could not update auth token"})
+		// return jsonError(c, fiber.StatusBadRequest, "Invalid login credentials!")
+	}
+
+	c.Set("Access-Control-Expose-Headers", "*") // Needed to show headers in web app
+	c.Set(constants.ACCESS_TOKEN_HEADER, "bearer "+bearerToken)
+	c.Set(constants.ACCESS_TOKEN_EXPIRY_HEADER, fmt.Sprint(bearerExpiry))
+	c.Set(constants.REFRESH_TOKEN_HEADER, refreshToken)
+	return c.JSON(fiber.Map{MESSAGE: "Session updated"})
+}
 
 func (i *Instance) getPasswordResetCode(c *fiber.Ctx) error {
 	email := c.Query("email")

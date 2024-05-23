@@ -2,6 +2,7 @@ package util
 
 import (
 	"crypto/rand"
+	"encoding/json"
 	"errors"
 	"math/big"
 	"reflect"
@@ -85,4 +86,10 @@ func ParseDuration(s string) (time.Duration, error) {
 	}
 
 	return time.ParseDuration(s)
+}
+
+func JsonMapFromBytes(b []byte) map[string]interface{} {
+	var m map[string]interface{}
+	json.Unmarshal(b, &m)
+	return m
 }

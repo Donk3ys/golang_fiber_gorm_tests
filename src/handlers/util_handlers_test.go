@@ -1,6 +1,7 @@
 package handlers_test
 
 import (
+	"api/src/util"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -17,7 +18,7 @@ func TestStatus(t *testing.T) {
 	// req.Header.Set("Content-type", "application/json")
 	resp, _ := app.Test(req, -1)
 	body, _ := ioutil.ReadAll(resp.Body)
-	json := responseMap(body)
+	json := util.JsonMapFromBytes(body)
 	t.Log(json)
 
 	if assert.Equal(t, http.StatusOK, resp.StatusCode) {
