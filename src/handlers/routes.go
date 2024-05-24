@@ -39,6 +39,7 @@ func (i *Instance) Setup(app *fiber.App) {
 	api.Post("/v1/password/reset", i.resetPassword)
 
 	api.Get("/status", i.status)
+	api.Get("/test-mail", i.testMail)
 
 	// Auth Middleware
 	api.Use(i.Middleware.AuthenticateAuthTokenAndCreateNewIfExpired)

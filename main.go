@@ -43,7 +43,7 @@ func main() {
 				User:     os.Getenv("SMTP_USER"),
 				Password: os.Getenv("SMTP_PASSWORD"),
 				Host:     os.Getenv("SMTP_HOST"),
-				Port:     "587",
+				Port:     os.Getenv("SMTP_PORT"),
 			},
 		},
 		SMS: notification.SMS{

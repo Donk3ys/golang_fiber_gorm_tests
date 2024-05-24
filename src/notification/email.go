@@ -4,8 +4,8 @@ import (
 	"api/src/constants"
 	"bytes"
 	"fmt"
+	"html/template"
 	"net/smtp"
-	"text/template"
 
 	"github.com/gofiber/fiber/v2/log"
 )
@@ -65,27 +65,27 @@ func (s SMTP) SendMail(from string, to []string, subject string, templatePath st
 		from = "no-reply@support.com"
 	}
 
-	auth := smtp.PlainAuth("", s.User, s.Password, s.Host)
-
 	template, err := template.ParseFiles(templatePath)
 	if err != nil {
+		log.Errorf("Email template %s failed to parse: %v", templatePath, err)
 		return err
 	}
 
 	headers := "MIME-version: 1.0;\nContent-Type: text/html;"
 	var body bytes.Buffer
-	body.Write([]byte(fmt.Sprintf("From: %s\nSubject: %s\n%s\n\n", from, subject, headers)))
+	body.Write([]byte(fmt.Sprintf("From: %s\nTo: %s\nSubject: %s\n%s\n\n", from, to[0], subject, headers)))
 
 	err = template.Execute(&body, data)
 	if err != nil {
+		log.Errorf("Email template %s failed to insert data: %v", templatePath, err)
 		return err
 	}
 
-	// Sending email.
-	err = smtp.SendMail(s.Host+":"+s.Port, auth, from, to, body.Bytes())
+	auth := smtp.PlainAuth("", s.User, s.Password, s.Host)
+	serverAddress := fmt.Sprintf("%s:%s", s.Host, s.Port)
+	err = smtp.SendMail(serverAddress, auth, from, to, body.Bytes())
 	if err != nil {
-		log.Errorf("[Email Error]: %s", err)
-		return err
+		log.Errorf("SMPT Failed to send email: %v", err)
 	}
 	return nil
 }
