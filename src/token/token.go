@@ -13,6 +13,8 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
+// TODO: TEST
+
 func ParseBearerToken(bearer string) string {
 	bearer = strings.TrimSpace(bearer)
 	return strings.Replace(bearer, "bearer ", "", 1)
@@ -63,7 +65,7 @@ func CreateRefreshToken(userID uuid.UUID) (string, *time.Time, error) {
 	refreshToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims).SignedString([]byte(os.Getenv(constants.REFRESH_TOKEN_SECRET)))
 	if err != nil {
 		log.Error("jwt sign refresh error. ", err)
-		return "", nil, errors.New("Could not crete authentication for user")
+		return "", nil, errors.New("Could not create token for user[002]")
 	}
 
 	return refreshToken, &refreshExpiry, nil

@@ -53,19 +53,6 @@ func (i *Instance) CheckPasswordResetCode(email string, code string) error {
 	return nil
 }
 
-func (i *Instance) fetchExisingUserSession(token string, userID uuid.UUID) *models.Session {
-	// Check for existing session in cache
-
-	// Check for existing session in db/cache
-	var exSession models.Session
-	i.Db.First(&exSession, "(token=? AND expires_at>?) OR from_token=?", token, time.Now(), token)
-	if exSession.UserID == uuid.Nil {
-		return nil
-	}
-
-	return &exSession
-}
-
 func (i *Instance) CreateUserSession(userID uuid.UUID) (string, int64, string, error) {
 	// Create new bearerToken
 	bearer, bearerExpiry, err := token.CreateAuthToken(userID)
