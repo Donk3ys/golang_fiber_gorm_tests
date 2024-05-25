@@ -29,7 +29,7 @@ func (i *Instance) Setup(app *fiber.App) {
 
 	api.Post("/v1/sign-up", i.signupUser)
 	api.Post("/v1/login", i.loginUser)
-	api.Get("/v1/sign-up/verify", i.signupVerifyEmail)
+	api.Post("/v1/sign-up/verify", i.signupVerifyEmail)
 	// api.Get("/v1/login/otp/verify", i.verifyMobileLogin)
 	// api.Get("/v1/sign-up/link/mobile", i.signUpLinkMobileNumber)
 	// api.Get("/v1/mobile/update/user/link", i.updateUserMobileNumber)
@@ -38,11 +38,13 @@ func (i *Instance) Setup(app *fiber.App) {
 	api.Get("/v1/password/reset/verify", i.verifyPasswordResetCode)
 	api.Post("/v1/password/reset", i.resetPassword)
 
+	api.Post("/v1/refresh-session", i.refreshSession)
+
 	api.Get("/status", i.status)
 	api.Get("/test-mail", i.testMail)
 
 	// Auth Middleware
-	api.Use(i.Middleware.AuthenticateAuthTokenAndCreateNewIfExpired)
+	api.Use(i.Middleware.AuthenticateAuthToken)
 
 	api.Get("/v1/user", i.getUser)
 	// api.Patch("/v1/user", i.updateUser)

@@ -1,4 +1,4 @@
-# go test -run TestLoginSuccess  ./src/handlers -v
+# go test -run TestCache  ./src/repo -v
 
 test-unit: 
 	go test ./src/util -coverprofile=.build/test-coverage/util-cover.out

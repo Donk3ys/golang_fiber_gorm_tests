@@ -7,10 +7,9 @@ import (
 )
 
 type Session struct {
-	ID        uuid.UUID `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	UserID    uuid.UUID `gorm:"type:uuid;primaryKey"`
 	Token     string    `gorm:"index"`
 	FromToken string    `gorm:"index"`
-	UserID    uuid.UUID `gorm:"index"`
 	CreatedAt time.Time
 	ExpiresAt time.Time
 }

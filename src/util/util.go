@@ -84,8 +84,9 @@ func ParseDuration(s string) (time.Duration, error) {
 		days, err := time.ParseDuration(s[:len(s)-1] + "h")
 		return days * 24, err
 	}
-
-	return time.ParseDuration(s)
+	dur, err := time.ParseDuration(s)
+	return dur, err
+	// return time.ParseDuration(s)
 }
 
 func JsonMapFromBytes(b []byte) map[string]interface{} {

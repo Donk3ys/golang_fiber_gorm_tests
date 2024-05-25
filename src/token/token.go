@@ -15,7 +15,7 @@ import (
 
 func ParseBearerToken(bearer string) string {
 	bearer = strings.TrimSpace(bearer)
-	return strings.Replace(bearer, constants.ACCESS_TOKEN_HEADER+" ", "", 1)
+	return strings.Replace(bearer, "bearer ", "", 1)
 }
 
 func DecodeAuthToken(authToken string) (*jwt.Token, error) {

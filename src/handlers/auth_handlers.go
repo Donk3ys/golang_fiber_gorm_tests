@@ -344,33 +344,33 @@ func (i *Instance) updateUser(c *fiber.Ctx) error {
 }
 
 // TODO: test
-// func (i *Instance) removeUser(c *fiber.Ctx) error {
-// 	uId := (c.Locals(constants.REQ_USER_ID)).(string)
-//
-// 	var json map[string]string
-// 	if err := c.BodyParser(&json); err != nil {
-// 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{ERROR: "Invalid data!"})
-// 	}
-// 	password := json["password"]
-//
-// 	var userModel models.User
-// 	i.Repo.Db.First(&userModel, "id=? AND status>0", uId)
-//
-// 	err := util.CheckPasswordMatch(userModel.Password, password)
-// 	if err != nil {
-// 		// log.Printf("Password missmatch for email: %s\n", req.Email)
-// 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{ERROR: "Invalid password or user already removed!"})
-// 	}
-//
-// 	res := i.Repo.Db.Model(&models.User{}).Where("id=?", uId).Update("status", 0)
-// 	if res.Error != nil {
-// 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{ERROR: "Unexpected error trying to remove user"})
-// 	}
-//
-// 	i.Repo.Db.Where("user_id=?", uId).Delete(&models.Session{})
-//
-// 	return c.JSON(fiber.Map{MESSAGE: "User succesfully removed."})
-// }
+func (i *Instance) removeUser(c *fiber.Ctx) error {
+	uId := (c.Locals(constants.REQ_USER_ID)).(string)
+
+	var json map[string]string
+	if err := c.BodyParser(&json); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{ERROR: "Invalid data!"})
+	}
+	password := json["password"]
+
+	var userModel models.User
+	i.Repo.Db.First(&userModel, "id=? AND status>0", uId)
+
+	err := util.CheckPasswordMatch(userModel.Password, password)
+	if err != nil {
+		// log.Printf("Password missmatch for email: %s\n", req.Email)
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{ERROR: "Invalid password or user already removed!"})
+	}
+
+	res := i.Repo.Db.Model(&models.User{}).Where("id=?", uId).Update("status", 0)
+	if res.Error != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{ERROR: "Unexpected error trying to remove user"})
+	}
+
+	i.Repo.Db.Where("user_id=?", uId).Delete(&models.Session{})
+
+	return c.JSON(fiber.Map{MESSAGE: "User succesfully removed."})
+}
 
 func (i *Instance) refreshSession(c *fiber.Ctx) error {
 	existingBearerToken := c.Get(constants.ACCESS_TOKEN_HEADER)
@@ -389,7 +389,9 @@ func (i *Instance) refreshSession(c *fiber.Ctx) error {
 	c.Set("Access-Control-Expose-Headers", "*") // Needed to show headers in web app
 	c.Set(constants.ACCESS_TOKEN_HEADER, "bearer "+bearerToken)
 	c.Set(constants.ACCESS_TOKEN_EXPIRY_HEADER, fmt.Sprint(bearerExpiry))
-	c.Set(constants.REFRESH_TOKEN_HEADER, refreshToken)
+	if refreshToken != "" {
+		c.Set(constants.REFRESH_TOKEN_HEADER, refreshToken)
+	}
 	return c.JSON(fiber.Map{MESSAGE: "Session updated"})
 }
 

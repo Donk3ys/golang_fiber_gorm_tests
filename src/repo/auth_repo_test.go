@@ -1,15 +1,12 @@
 package repos_test
 
 import (
-	"api/src/constants"
 	otp "api/src/enums/otps"
 	"api/src/models"
 	"context"
 	"testing"
-	"time"
 
 	"github.com/gofiber/fiber/v2/log"
-	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -41,32 +38,43 @@ func TestCreateUserOTPCodeSuccessSignup(t *testing.T) {
 	// TODO: check create and expired duration
 }
 
-func TestCacheTest(t *testing.T) {
+func TestCache(t *testing.T) {
 	setupTest()
 	defer tearDownTest()
 
-	session := models.Session{
-		ID:        uuid.NewV4(),
-		Token:     fake.RandomStringWithLength(18),
-		FromToken: fake.RandomStringWithLength(18),
-		UserID:    uuid.NewV4(),
-		CreatedAt: time.Now(),
-		ExpiresAt: time.Now().Add(constants.REFRESH_TOKEN_DURATION),
-	}
+	// session := models.Session{
+	// 	ID:        uuid.NewV4(),
+	// 	Token:     fake.RandomStringWithLength(18),
+	// 	FromToken: fake.RandomStringWithLength(18),
+	// 	UserID:    uuid.NewV4(),
+	// 	CreatedAt: time.Now(),
+	// 	ExpiresAt: time.Now().Add(constants.REFRESH_TOKEN_DURATION),
+	// }
 
 	ctx := context.Background()
-	err := cache.Set(ctx, "session_1", session)
+
+	err := cache.Do(ctx, cache.B().Set().Key("key").Value("bob").Build()).Error()
 	if err != nil {
-		log.Error("Err Set ", err)
+		log.Error("Err Set: ", err)
 	}
-
-	time.Sleep(time.Millisecond * 10)
-
-	session2 := models.Session{}
-	_, err = cache.Get(ctx, "session_1", &session2)
+	val, err := cache.Do(ctx, cache.B().Get().Key("key").Build()).ToString()
 	if err != nil {
-		log.Error("Err Get", err)
+		log.Error("Err Get: ", err)
 	}
+	log.Debugf("GET %s", val)
 
-	log.Debug("User Session ", session2)
+	// err := cache.Set(ctx, "session_1", session)
+	// if err != nil {
+	// 	log.Error("Err Set ", err)
+	// }
+	//
+	// time.Sleep(time.Millisecond * 10)
+	//
+	// session2 := models.Session{}
+	// _, err = cache.Get(ctx, "session_1", &session2)
+	// if err != nil {
+	// 	log.Error("Err Get", err)
+	// }
+
+	// log.Debug("User Session ", session2)
 }

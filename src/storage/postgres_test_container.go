@@ -24,12 +24,11 @@ func TestConnectPostgres(ctx context.Context) (*gorm.DB, testcontainers.Containe
 		"POSTGRES_USER":     usr,
 		"POSTGRES_DB":       dbName,
 	}
-	var port = "5432/tcp"
 
 	req := testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
 			Image:        "postgres:14-alpine",
-			ExposedPorts: []string{port},
+			ExposedPorts: []string{"5432/tcp"},
 			Env:          env,
 			WaitingFor:   wait.ForLog("database system is ready to accept connections"),
 		},
@@ -51,7 +50,7 @@ func TestConnectPostgres(ctx context.Context) (*gorm.DB, testcontainers.Containe
 
 	dsn := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		os.Getenv("POSTGRES_HOSTNAME"),
+		os.Getenv("POSTGRES_HOST"),
 		p.Port(),
 		usr,
 		pw,
@@ -60,7 +59,7 @@ func TestConnectPostgres(ctx context.Context) (*gorm.DB, testcontainers.Containe
 		Logger: logger.Default.LogMode(logger.Error),
 	})
 	if err != nil {
-		panic("Test postgres connection error")
+		log.Panic("Postgres test container connection error\n", err)
 	}
 
 	return db, tc

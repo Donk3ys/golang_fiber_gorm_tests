@@ -39,7 +39,7 @@ func TestMain(m *testing.M) {
 func setupTestApp() {
 	db, dbTc = storage.TestConnectPostgres(context.Background())
 	storage.AutoMigratePostgres(db)
-	cache := storage.ConnectRistrettoCache()
+	cache := storage.ConnectValkey()
 
 	repo := repos.Instance{
 		Cache: cache,
@@ -54,7 +54,7 @@ func setupTestApp() {
 	app = fiber.New(fiber.Config{
 		Immutable: true,
 	})
-	app.Use(mware.AuthenticateAuthTokenAndCreateNewIfExpired)
+	app.Use(mware.AuthenticateAuthToken)
 	app.Get("/", func(c *fiber.Ctx) error {
 		uId := (c.Locals(constants.REQ_USER_ID)).(uuid.UUID)
 		return c.SendString(uId.String())

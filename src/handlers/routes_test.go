@@ -46,7 +46,7 @@ func setupTestApp() {
 
 	// database.Seed(db)
 
-	cache := storage.ConnectRistrettoCache()
+	cache := storage.ConnectValkey()
 
 	mockEmail = &mocks_test.EmailCLient{}
 	mockSms = &mocks_test.SmsCLient{}

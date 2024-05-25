@@ -18,18 +18,24 @@ var tables = []interface{}{
 }
 
 func ConnectPostgres() *gorm.DB {
+	host := os.Getenv("POSTGRES_HOST")
+	port := os.Getenv("POSTGRES_PORT")
+	dbname := os.Getenv("POSTGRES_DB")
+
 	dsn := fmt.Sprintf(
-		"host=%s port=5432 user=%s password=%s dbname=%s sslmode=disable",
-		os.Getenv("POSTGRES_HOSTNAME"),
+		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		host,
+		port,
 		os.Getenv("POSTGRES_USER"),
 		os.Getenv("POSTGRES_PASSWORD"),
-		os.Getenv("POSTGRES_DB"))
+		dbname)
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
+		Logger: logger.Default.LogMode(logger.Error),
 	})
 	if err != nil {
-		log.Fatal("Postgres connection error", err)
+		log.Fatalf("Postgres connection error db %s at %s:%s\n", dbname, host, port, err)
 	}
+	log.Infof("Postgres connected to db %s at %s:%s", dbname, host, port)
 
 	return db
 }

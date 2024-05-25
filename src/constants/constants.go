@@ -55,7 +55,7 @@ func SetConstantsFromEnvs(envPath string) {
 
 	if os.Getenv(atDur) != "" {
 		dur, err := util.ParseDuration(os.Getenv(atDur))
-		if err != nil {
+		if err == nil {
 			ACCESS_TOKEN_DURATION = dur
 		} else {
 			log.Warnf("Using default %s not set in .env %v", atDur, err)
@@ -63,7 +63,7 @@ func SetConstantsFromEnvs(envPath string) {
 	}
 	if os.Getenv(rtDur) != "" {
 		dur, err := util.ParseDuration(os.Getenv(rtDur))
-		if err != nil {
+		if err == nil {
 			REFRESH_TOKEN_DURATION = dur
 		} else {
 			log.Warnf("Using default %s not set in .env %v", rtDur, err)

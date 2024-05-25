@@ -9,19 +9,20 @@ import (
 	"os"
 	"testing"
 
-	"github.com/eko/gocache/lib/v4/marshaler"
 	"github.com/jaswdr/faker"
 	"github.com/testcontainers/testcontainers-go"
+	"github.com/valkey-io/valkey-go"
 	"gorm.io/gorm"
 )
 
 var (
-	cache  *marshaler.Marshaler
-	db     *gorm.DB
-	dbTc   testcontainers.Container
-	fake   faker.Faker
-	repo   repos.Instance
-	mockFs *mocks_test.FileSysetmClient
+	cache   valkey.Client
+	db      *gorm.DB
+	dbTc    testcontainers.Container
+	cacheTc testcontainers.Container
+	fake    faker.Faker
+	repo    repos.Instance
+	mockFs  *mocks_test.FileSysetmClient
 )
 
 func TestMain(m *testing.M) {
@@ -35,11 +36,12 @@ func TestMain(m *testing.M) {
 }
 
 func setupTestApp() {
+	ctx := context.Background()
 	// createFolders()
-	db, dbTc = storage.TestConnectPostgres(context.Background())
+	db, dbTc = storage.TestConnectPostgres(ctx)
 	storage.AutoMigratePostgres(db)
 
-	cache = storage.ConnectRistrettoCache()
+	cache, cacheTc = storage.TestConnectValkey(ctx)
 
 	mockFs = &mocks_test.FileSysetmClient{}
 
@@ -52,8 +54,10 @@ func setupTestApp() {
 }
 
 func tearDownTestApp() {
-	cache.Clear(context.Background())
-	dbTc.Terminate(context.Background())
+	ctx := context.Background()
+	// cache.Do(ctx, cache.B().Reset().Build()).Error()
+	dbTc.Terminate(ctx)
+	cacheTc.Terminate(ctx)
 }
 
 func setupTest() {

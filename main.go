@@ -27,7 +27,7 @@ func main() {
 	storage.AutoMigratePostgres(db)
 	// storage.Seed(db)
 
-	cache := storage.ConnectRistrettoCache()
+	cache := storage.ConnectValkey()
 
 	repo := repos.Instance{
 		Cache: cache,
