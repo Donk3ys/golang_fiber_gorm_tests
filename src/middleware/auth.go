@@ -18,7 +18,7 @@ func (i *Instance) AuthenticateAuthToken(c *fiber.Ctx) error {
 	token, err := token.DecodeAuthToken(authHeader)
 	if err != nil || !token.Valid {
 		log.Error("Bearer error: ", err)
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Token error!"})
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Token invalid!"})
 	}
 
 	claims := token.Claims.(*views.SessionClaims)
